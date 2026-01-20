@@ -6,3 +6,11 @@ The Local Group is the group of galaxies that contains the Milky Way, M31, and a
 Data: https://www.tng-project.org/data/downloads/TNG300-1/  
 Project plan: https://docs.google.com/document/d/1yCS9a7m-b1HusJnUgVIBFaPjPp4gSWl5nublYSlUoxM/edit?usp=sharing
 Google Drive: https://drive.google.com/drive/folders/1jNtgNt_ird0WxtvCenBuH16vZaEci7am?usp=drive_link
+
+# Deadlines
+
+- 3 Feb: on-site lecture: project plans 1, attend only yours (upload slides and project plan day before)
+- 13 Mar: Submit mid-term presentation video to moodle and update the project plan
+- 17 Mar: Submit peer feedback for mid-term presentation videos
+- 21 Apr: on-site lecture: project plans 1, attend only yours (upload slides and project plan day before)
+- 6 May (team deadline): final report  and learning diary DL (15 May absolute deadline)

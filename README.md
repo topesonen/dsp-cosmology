@@ -14,3 +14,8 @@ Google Drive: https://drive.google.com/drive/folders/1jNtgNt_ird0WxtvCenBuH16vZa
 - 17 Mar: Submit peer feedback for mid-term presentation videos
 - 21 Apr: on-site lecture: project plans 1, attend only yours (upload slides and project plan day before)
 - 6 May (team deadline): final report  and learning diary DL (15 May absolute deadline)
+
+# Links
+- The simulation is (briefly) described here: https://www.tng-project.org/about/
+- Example scripts for getting started with the data are here: https://www.tng-project.org/data/docs/scripts/
+- One of Till's papers (written with an undergraduate student on a somewhat related topic): https://academic.oup.com/mnras/article/521/4/4863/7084035

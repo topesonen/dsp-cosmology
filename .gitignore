@@ -1,0 +1,10 @@
+.venv/
+__pycache__/
+.ipynb_checkpoints/
+data/
+outputs/
+*.pyc
+.DS_Store
+notes.md
+.vscode/
+tng300/outputs/

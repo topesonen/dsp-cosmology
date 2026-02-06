@@ -5,8 +5,8 @@ The Local Group is the group of galaxies that contains the Milky Way, M31, and a
 
 
 Data: https://www.tng-project.org/data/downloads/TNG300-1/  
-Project plan: https://docs.google.com/document/d/1yCS9a7m-b1HusJnUgVIBFaPjPp4gSWl5nublYSlUoxM/edit?usp=sharing
-Google Drive: https://drive.google.com/drive/folders/1jNtgNt_ird0WxtvCenBuH16vZaEci7am?usp=drive_link
+Project plan: https://docs.google.com/document/d/1yCS9a7m-b1HusJnUgVIBFaPjPp4gSWl5nublYSlUoxM/edit?usp=sharing/
+Google Drive: https://drive.google.com/drive/folders/1jNtgNt_ird0WxtvCenBuH16vZaEci7am?usp=drive_link/
 
 # Deadlines
 
@@ -20,6 +20,7 @@ Google Drive: https://drive.google.com/drive/folders/1jNtgNt_ird0WxtvCenBuH16vZa
 - The simulation is (briefly) described here: https://www.tng-project.org/about/
 - Example scripts for getting started with the data are here: https://www.tng-project.org/data/docs/scripts/
 - One of Till's papers (written with an undergraduate student on a somewhat related topic): https://academic.oup.com/mnras/article/521/4/4863/7084035
+- Data specifications: Fields in FoF Halos and Subfind Subhalos: https://www.tng-project.org/data/docs/specifications/#sec2a
 
 # TNG300 + illustris_python (quick setup notes)  
 ================================================  

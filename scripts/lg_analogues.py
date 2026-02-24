@@ -52,6 +52,79 @@ class PairSet:
     v_t: np.ndarray
     same_host: np.ndarray
 
+    def apply_mask(self, mask: np.ndarray) -> 'PairSet':
+        # Returns a new PairSet keeping only the True indices in the mask.
+        return PairSet(
+            i=self.i[mask],
+            j=self.j[mask],
+            dist_kpc=self.dist_kpc[mask],
+            v_r=self.v_r[mask],
+            v_t=self.v_t[mask],
+            same_host=self.same_host[mask]
+        )
+
+@dataclass(frozen=True)
+class SelectionConfig:
+    # Simulation constants
+    h: float
+    box_ckpch: float
+    
+    # Mass cuts
+    mstar_min: float
+    mstar_max: float
+    isolation_factor: float
+    
+    # Kinematic cuts (for future use)
+    max_total_velocity: float = 300.0
+    
+    # Environmental cuts (for future use)
+    density_radius_kpc: float = 2000.0
+
+class AnaloguePipeline:
+    def __init__(self, pairs: PairSet):
+        self.pairs = pairs
+        self.history = {"initial": len(pairs.i)}
+        self.labels: list[str] = []
+        self.masks: list[np.ndarray] = []
+        self._cutflow: list[dict[str, float | int | str]] = [{
+            "label": "initial",
+            "before": len(pairs.i),
+            "after": len(pairs.i),
+            "frac_kept": 1.0,
+        }]
+
+    def apply_filter(self, filter_name: str, mask: np.ndarray) -> None:
+        # Applies a boolean mask and logs how many pairs survived.
+        mask = np.asarray(mask, dtype=bool)
+        if mask.ndim != 1:
+            raise ValueError("mask must be a 1D boolean array")
+        n_before = len(self.pairs.i)
+        if mask.shape[0] != n_before:
+            raise ValueError(f"mask length {mask.shape[0]} does not match number of pairs {n_before}")
+
+        self.labels.append(filter_name)
+        self.masks.append(mask.copy())
+
+        self.pairs = self.pairs.apply_mask(mask)
+        n_after = len(self.pairs.i)
+        self.history[filter_name] = n_after
+        frac = (n_after / n_before) if n_before > 0 else 0.0
+        self._cutflow.append({
+            "label": filter_name,
+            "before": n_before,
+            "after": n_after,
+            "frac_kept": frac,
+        })
+
+    def get_cutflow(self) -> list[dict[str, float | int | str]]:
+        """Return per-step cutflow entries with before/after counts and kept fraction."""
+        return list(self._cutflow)
+        
+    def print_cutflow(self) -> None:
+        for row in self._cutflow:
+            name = str(row["label"])
+            count = int(row["after"])
+            print(f"{name}: {count} pairs remaining")
 
 def load_header_constants(basePath: str, snap: int) -> Dict[str, float]:
     """Load commonly used header constants.
@@ -215,6 +288,14 @@ def find_pairs_periodic(
 
     return PairSet(i=i, j=j, dist_kpc=dist_kpc, v_r=v_r, v_t=v_t, same_host=same_host)
 
+def filter_bound_pairs(
+    sub: Dict[str, Any], 
+    pairs: PairSet, 
+    config: SelectionConfig
+) -> np.ndarray:
+    # Example logic to ensure the total relative velocity is realistic
+    total_velocity = np.sqrt(pairs.v_r**2 + pairs.v_t**2)
+    return total_velocity < config.max_total_velocity
 
 def isolation_filter_no_third_factor_x_in_same_group(
     sub: Dict[str, Any],

@@ -29,12 +29,19 @@ class Sample:
     mstar and mdm are in Msun.
     """
     keep_idx: np.ndarray
+    is_central: np.ndarray
     pos: np.ndarray
     vel: np.ndarray
     mtype: np.ndarray
     grnr: np.ndarray
     mstar: np.ndarray
     mdm: np.ndarray
+    mgas: np.ndarray
+    mtot: np.ndarray
+    m200c: np.ndarray
+    m_hr_type: np.ndarray
+    r200c: np.ndarray        
+    v200c: np.ndarray
 
 
 @dataclass(frozen=True)
@@ -96,7 +103,9 @@ def select_central_plus_largest_satellite_by_stellar_mass(
     Returns:
         Sample containing global indices and sliced arrays.
     """
-    halo_cat = il.groupcat.loadHalos(basePath, snap, fields=["GroupFirstSub", "GroupNsubs"])
+    halo_cat = il.groupcat.loadHalos(basePath, snap, fields=[
+        "GroupFirstSub", "GroupNsubs", "Group_M_Crit200", "Group_R_Crit200", 
+    ])
     first = halo_cat["GroupFirstSub"]
 
     # SubhaloMassType units are 1e10 Msun/h; index 4 is stars+wind.
@@ -141,14 +150,33 @@ def select_central_plus_largest_satellite_by_stellar_mass(
     mstar = mtype[:, 4].astype(np.float64) * 1e10 / h
     mdm = mtype[:, 1].astype(np.float64) * 1e10 / h
 
+    selected_grnr = grnr_all[keep_idx]
+    
+    m200c = halo_cat["Group_M_Crit200"][selected_grnr].astype(np.float64) * 1e10 / h
+    r200c = halo_cat["Group_R_Crit200"][selected_grnr].astype(np.float64) / h
+    
+    G = 4.30091e-6 
+    v200c = np.sqrt(G * m200c / np.where(r200c > 0, r200c, 1.0))
+    v200c[r200c <= 0] = 0
+
+    mtype = sub["SubhaloMassType"][keep_idx]
+    mgas = mtype[:, 0].astype(np.float64) * 1e10 / h
+
     return Sample(
         keep_idx=keep_idx,
+        is_central=is_central[keep_idx],
         pos=sub["SubhaloPos"][keep_idx],
         vel=sub["SubhaloVel"][keep_idx],
         mtype=mtype,
-        grnr=sub["SubhaloGrNr"][keep_idx],
-        mstar=mstar,
-        mdm=mdm,
+        grnr=selected_grnr,
+        mstar=mstar_all[keep_idx],
+        mdm=mtype[:, 1].astype(np.float64) * 1e10 / h,
+        mgas=mgas,
+        mtot=sub["SubhaloMass"][keep_idx].astype(np.float64) * 1e10 / h,
+        m200c=m200c,
+        m_hr_type=sub["SubhaloMassInRadType"][keep_idx].astype(np.float64) * 1e10 / h,
+        r200c=r200c,
+        v200c=v200c
     )
 
 
@@ -396,6 +424,27 @@ def isolation_filter_no_massive_intruder_within_distance_x(
                     
     return keep_iso
 
+def get_local_neighbors(sample, sub, h, box_ckpch, search_radius_kpc=2000.0):
+    """
+    Helper to identify valid neighbors within a physical search radius.
+    """
+
+    # Initialize masses and positions
+    m_all = sub["SubhaloMass"].astype(np.float64) * 1e10 / h
+    pos_all = (sub["SubhaloPos"].astype(np.float64)) % box_ckpch
+    
+    # Filter to include only valid subhalos
+    valid_mask = (sub["SubhaloFlag"] == 1) & (m_all > 0)
+    pos_valid = pos_all[valid_mask]
+    m_valid = m_all[valid_mask]
+    global_indices_valid = np.where(valid_mask)[0]
+    
+    # Find all neighbors within `search_radius_kpc`
+    tree = cKDTree(pos_valid, boxsize=box_ckpch)
+    search_r = search_radius_kpc * h
+    neighbors = tree.query_ball_point(sample.pos % box_ckpch, r=search_r)
+    
+    return neighbors, pos_valid, m_all, m_valid, global_indices_valid
 
 def calculate_force_ratio(
     sub: Dict[str, Any],
@@ -418,48 +467,45 @@ def calculate_force_ratio(
         search_radius_kpc: Radius to search for external perturbers (default 2000/2Mpc).
 
     Returns:
-        np.ndarray: Force ratio F for each pair
+        np.ndarray: Force ratio F for each pair.
     """
    
-    m_all = sub["SubhaloMass"].astype(np.float64) * 1e10 / h
-    pos_all = (sub["SubhaloPos"].astype(np.float64)) % box_ckpch
+    # Find local neighbors
+    neighbors, pos_valid, m_all, m_valid, global_ids_valid = get_local_neighbors(
+        sample, sub, h, box_ckpch, search_radius_kpc
+    )
     
-    # Filter valid subhalos
-    valid_mask = (sub["SubhaloFlag"] == 1) & (m_all > 0)
-    pos_valid = pos_all[valid_mask]
-    m_valid = m_all[valid_mask]
-    global_indices_valid = np.where(valid_mask)[0]
-    
-    # Find neighbors
-    tree = cKDTree(pos_valid, boxsize=box_ckpch)
-    search_r = search_radius_kpc * h
-    neighbors = tree.query_ball_point(sample.pos % box_ckpch, r=search_r)
-    
-    # Find top two external forces and their source IDs
+    # Initialize arrays
     max_f1 = np.zeros(len(sample.pos))    # Strongest force
     id_f1 = np.full(len(sample.pos), -1)  # ID of strongest
     max_f2 = np.zeros(len(sample.pos))    # Second strongest force
 
     softening_sq = 1.0 # Prevent 1/r^2 divergence
     
+    # Find the disturbers for each subhalo
     for s_idx in range(len(sample.pos)):
+
+        # Skip if there are no neighbors
         if not neighbors[s_idx]:
             continue
-            
+        
+        # Find the global index for each neighbor
         n_idx_in_valid = neighbors[s_idx]
-        n_global_ids = global_indices_valid[n_idx_in_valid]
+        n_global_ids = global_ids_valid[n_idx_in_valid]
         
         # Exclude the subhalo itself
         self_mask = n_global_ids != sample.keep_idx[s_idx]
         if not np.any(self_mask): continue
 
+        # Compute all separations
         dr = pos_valid[n_idx_in_valid][self_mask] - (sample.pos[s_idx] % box_ckpch)
         dr -= box_ckpch * np.round(dr / box_ckpch)
         dist_sq = np.sum(dr**2, axis=1) + softening_sq
         
+        # Compute all gravitational attractions
         all_forces = m_valid[n_idx_in_valid][self_mask] / dist_sq
         
-        # Sort forces to get top two
+        # Sort forces to get the top two
         if len(all_forces) >= 2:
             sort_idx = np.argsort(all_forces)[-2:]
             max_f1[s_idx] = all_forces[sort_idx[1]]
@@ -469,12 +515,12 @@ def calculate_force_ratio(
             max_f1[s_idx] = all_forces[0]
             id_f1[s_idx] = n_global_ids[self_mask][0]
 
-    # Final pairs
+    # LG analogue pair
     idx1, idx2 = pair_set.i, pair_set.j
     global_id1 = sample.keep_idx[idx1]
     global_id2 = sample.keep_idx[idx2]
     
-    # Internal forces
+    # Internal force between the pair
     r_pair_sq = (pair_set.dist_kpc * h)**2 + softening_sq
     f_int_on_1 = m_all[global_id2] / r_pair_sq
     f_int_on_2 = m_all[global_id1] / r_pair_sq
@@ -483,6 +529,7 @@ def calculate_force_ratio(
     f_ext_on_1 = np.where(id_f1[idx1] == global_id2, max_f2[idx1], max_f1[idx1])
     f_ext_on_2 = np.where(id_f1[idx2] == global_id1, max_f2[idx2], max_f1[idx2])
     
+    # Compute final ratios
     ratio1 = f_ext_on_1 / f_int_on_1
     ratio2 = f_ext_on_2 / f_int_on_2
     
@@ -513,54 +560,52 @@ def compute_tidal_dominance(
         Boolean mask: True for 'tidally dominant' pairs, False for 'subdominant'.
     """
 
-    m_all = sub["SubhaloMass"].astype(np.float64) * 1e10 / h
-    pos_all = (sub["SubhaloPos"].astype(np.float64)) % box_ckpch
-    
-    # Filter valid subhalos
-    valid_mask = (sub["SubhaloFlag"] == 1) & (m_all > 0)
-    pos_valid = pos_all[valid_mask]
-    m_valid = m_all[valid_mask]
-    global_indices_valid = np.where(valid_mask)[0]
-    
-    # Find neighbors
-    tree = cKDTree(pos_valid, boxsize=box_ckpch)
-    search_r = search_radius_kpc * h
-    neighbors = tree.query_ball_point(sample.pos % box_ckpch, r=search_r)
+    # Find local neighbors
+    neighbors, pos_valid, m_all, m_valid, global_ids_valid = get_local_neighbors(
+        sample, sub, h, box_ckpch, search_radius_kpc
+    )
     
     # Store the global index of the subhalo exerting the max force
     max_perturber_id = np.full(len(sample.pos), -1, dtype=int)
     
     softening_sq = 1.0 # Prevent 1/r^2 divergence
     
+    # Find the disturbers for each subhalo
     for s_idx in range(len(sample.pos)):
+        
+        # Skip if there are no neighbors
         if not neighbors[s_idx]:
             continue
-            
+        
+        # Find the global index for each neighbor
         n_idx_in_valid = neighbors[s_idx]
-        n_global_ids = global_indices_valid[n_idx_in_valid]
+        n_global_ids = global_ids_valid[n_idx_in_valid]
         
         # Exclude the subhalo itself
         mask = n_global_ids != sample.keep_idx[s_idx]
         if not np.any(mask): continue
         
-        # Calculate forces: F ~ M / r^2
+        # Compute all separations
         dr = pos_valid[n_idx_in_valid][mask] - (sample.pos[s_idx] % box_ckpch)
         dr -= box_ckpch * np.round(dr / box_ckpch)
         dist_sq = np.sum(dr**2, axis=1) + softening_sq
         
+        # Compute all gravitational attractions
         forces = m_valid[n_idx_in_valid][mask] / dist_sq
         
+        # Find the subhalo exerting the maximum attraction
         max_idx = np.argmax(forces)
         max_perturber_id[s_idx] = n_global_ids[mask][max_idx]
 
-    # Final pairs
+    # LG analogue pair
     id1 = sample.keep_idx[pairs.i]
     id2 = sample.keep_idx[pairs.j]
 
-    # Tidal champions (source of maximum tidal force)
+    # Tidal champions for each pair (source of maximum tidal force)
     champ1 = max_perturber_id[pairs.i]
     champ2 = max_perturber_id[pairs.j]
     
+    # The pair is tidally dominant if they are mutual champions
     is_dominant = (champ1 == id2) & (champ2 == id1)
     
     return is_dominant

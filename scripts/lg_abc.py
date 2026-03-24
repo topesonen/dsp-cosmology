@@ -241,26 +241,48 @@ def abc_rejection_mask(
     *,
     eps: float | None = None,
     accept_frac: float | None = None,
+    accept_n: int | None = None,
+    kernel_bandwidth: float = None
 ) -> np.ndarray:
     """Create rejection-ABC acceptance mask.
 
-    If `eps` is provided, accepts distances ``d <= eps``.
-    Otherwise accepts the closest `accept_frac` fraction.
+    Exactly one of these should be provided:
+
+    - eps: accept distances ``d <= eps``
+    - accept_frac: accept the closest fraction of rows
+    - accept_n: accept the closest fixed number of rows
     """
     d = np.asarray(d, dtype=np.float64)
     if d.ndim != 1:
         raise ValueError("d must be a 1D array")
 
+    bw = float(kernel_bandwidth)
+    if (not np.isfinite(bw)) or (bw <= 0.0):
+        raise ValueError("bandwidth must be finite and > 0")
+
     n = d.size
     if n == 0:
         return np.zeros(0, dtype=bool)
 
+    provided = int(eps is not None) + int(accept_frac is not None) + int(accept_n is not None)
+    if provided != 1:
+        raise ValueError("Provide exactly one of eps, accept_frac, or accept_n")
+
     if eps is not None:
         return d <= float(eps)
 
-    if accept_frac is None:
-        raise ValueError("Provide either eps or accept_frac")
-    if not (0.0 < accept_frac <= 1.0):
+    if accept_n is not None:
+        k = int(accept_n)
+        if k <= 0:
+            raise ValueError("accept_n must be >= 1")
+        k = min(k, n)
+        order = np.argsort(d, kind="mergesort")
+        mask = np.zeros(n, dtype=bool)
+        mask[order[:k]] = True
+        return mask
+
+    # accept_frac case
+    if not (0.0 < float(accept_frac) <= 1.0):
         raise ValueError("accept_frac must be in (0, 1]")
 
     k = int(np.ceil(float(accept_frac) * n))
@@ -272,18 +294,29 @@ def abc_rejection_mask(
     return mask
 
 
-def abc_kernel_weights(d: np.ndarray) -> np.ndarray:
-    """Compute normalized Gaussian-kernel ABC weights from distances."""
+def abc_kernel_weights(d: np.ndarray, *, bandwidth: float = 1.0) -> np.ndarray:
+    """Compute normalized Gaussian-kernel ABC weights from distances.
+
+    Weights are computed as:
+        ``w_i ∝ exp(-0.5 * (d_i / bandwidth)^2)``
+
+    With the default ``bandwidth=1``, this matches the original implementation.
+    """
     d = np.asarray(d, dtype=np.float64)
     if d.ndim != 1:
         raise ValueError("d must be a 1D array")
+
+    bw = float(bandwidth)
+    if (not np.isfinite(bw)) or (bw <= 0.0):
+        raise ValueError("bandwidth must be finite and > 0")
 
     w = np.zeros(d.size, dtype=np.float64)
     finite = np.isfinite(d)
     if not np.any(finite):
         return w
 
-    w[finite] = np.exp(-0.5 * d[finite] * d[finite])
+    z = d[finite] / bw
+    w[finite] = np.exp(-0.5 * z * z)
     total = w.sum()
     if (not np.isfinite(total)) or (total <= 0.0):
         return np.zeros_like(w)
@@ -292,6 +325,59 @@ def abc_kernel_weights(d: np.ndarray) -> np.ndarray:
     return w
 
 
+
+
+def run_abc_catalog(
+    X: np.ndarray,
+    theta: np.ndarray,
+    *,
+    x_obs: np.ndarray,
+    sigma: np.ndarray,
+    eps: float | None = None,
+    accept_frac: float | None = None,
+    accept_n: int | None = None,
+    kernel_bandwidth: float = 1.0,
+) -> dict[str, Any]:
+    """Run simple rejection + kernel ABC on an existing catalogue.
+
+    This mirrors the structure of a classic ABC tutorial (like a coin-flip example),
+    except that the "simulator" is replaced by an existing catalogue:
+
+    - each row i is one simulated system (one LG analogue pair)
+    - X[i] are the "observables-like" summary features for row i
+    - theta[i] is the target quantity to infer (posterior samples)
+
+    Returns a dict with distances, acceptance mask, kernel weights, and posterior summaries.
+    """
+    X = np.asarray(X, dtype=np.float64)
+    theta = np.asarray(theta, dtype=np.float64)
+
+    if X.ndim != 2:
+        raise ValueError("X must be a 2D array")
+    if theta.ndim != 1:
+        raise ValueError("theta must be a 1D array")
+    if X.shape[0] != theta.size:
+        raise ValueError("X and theta must have the same number of rows")
+
+    d = abc_distance_diagonal(X, x_obs, sigma)
+    acc = abc_rejection_mask(d, eps=eps, accept_frac=accept_frac, accept_n=accept_n, kernel_bandwidth=kernel_bandwidth)
+    w = abc_kernel_weights(d, bandwidth=kernel_bandwidth)
+
+    theta_acc = theta[acc]
+    summary_rejection = summarize_posterior(theta_acc) if theta_acc.size > 0 else None
+    summary_kernel = summarize_posterior(theta, w)
+
+    out: dict[str, Any] = {
+        "d": d,
+        "accept_mask": acc,
+        "accept_rate": float(acc.sum() / acc.size) if acc.size > 0 else 0.0,
+        "weights": w,
+        "ess": float(effective_sample_size(w)),
+        "theta_accepted": theta_acc,
+        "summary_rejection": summary_rejection,
+        "summary_kernel": summary_kernel,
+    }
+    return out
 def effective_sample_size(w: np.ndarray) -> float:
     """Compute effective sample size (ESS) from normalized-like weights."""
     w = np.asarray(w, dtype=np.float64)

@@ -323,7 +323,7 @@ def _run_marginal_sbc(
     for out_i, cal_i in enumerate(chosen):
         x_i = x_cal_t[cal_i]
         theta_true = theta_cal_t[cal_i].detach().cpu().numpy()
-        samples = posterior.sample((int(num_posterior_samples),), x=x_i)
+        samples = posterior.sample((int(num_posterior_samples),), x=x_i, show_progress_bars=False)
         samples_np = samples.detach().cpu().numpy()
         ranks[out_i] = np.sum(samples_np < theta_true[None, :], axis=0)
 
@@ -365,7 +365,7 @@ def _run_expected_coverage_1d(
     for cal_i in chosen:
         x_i = x_cal_t[cal_i]
         theta_true = float(theta_cal_t[cal_i].detach().cpu().numpy().reshape(-1)[0])
-        samples = posterior.sample((int(num_posterior_samples),), x=x_i).detach().cpu().numpy().reshape(-1)
+        samples = posterior.sample((int(num_posterior_samples),), x=x_i, show_progress_bars=False).detach().cpu().numpy().reshape(-1)
 
         for j, level in enumerate(levels):
             alpha = 0.5 * (1.0 - level)
@@ -389,7 +389,7 @@ def fit_catalog_npe(
     x_obs: np.ndarray | None = None,
     feature_names: list[str] | None = None,
     target_name: str = "theta",
-    density_model: str = "nsf",
+    density_model: str = "nsf", # Neural Spline Flow
     hidden_features: int = 64,
     num_transforms: int = 5,
     training_batch_size: int = 128,
@@ -576,7 +576,7 @@ def infer_with_npe(
     x_obs: np.ndarray,
     num_samples: int = 20_000,
     random_state: int | None = 0,
-    ppc_draws: int = 500,
+    ppc_draws: int = 500, # Posterior Predictive Check number of draws
     ppc_neighbors: int = 25,
 ) -> dict[str, Any]:
     """Evaluate the trained NPE posterior at x_obs."""
@@ -595,7 +595,7 @@ def infer_with_npe(
         torch_mod.manual_seed(int(random_state))
 
     x_obs_t = torch_mod.as_tensor(x_obs, dtype=torch_mod.float32, device=device)
-    samples_t = posterior.sample((int(num_samples),), x=x_obs_t)
+    samples_t = posterior.sample((int(num_samples),), x=x_obs_t, show_progress_bars=False)
     samples = samples_t.detach().cpu().numpy()
     if samples.ndim == 2 and samples.shape[1] == 1:
         samples_1d = samples[:, 0]

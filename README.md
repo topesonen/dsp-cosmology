@@ -81,5 +81,48 @@ subhalos["count"], subhalos["SubhaloMass"].shape
   
 =======
 
+## ABC exploration snippet (conditional on selection S)
+
+`S` here means all upstream cuts (mass window, central+largest-satellite definition, distance window, isolation, optional bound-pair cut).  
+ABC posterior statements are conditional on this selected sample.
+
+```python
+import numpy as np
+from lg_abc import (
+    build_pair_catalog, make_feature_matrix, make_theta_vector,
+    abc_distance_diagonal, abc_rejection_mask, abc_kernel_weights,
+    summarize_posterior
+)
+
+# after running selection + pair finding + pipeline filters:
+# sample = ...
+# pipeline = ...
+# sub = ...
+
+cat = build_pair_catalog(
+    sample=sample,
+    pairs=pipeline.pairs,
+    keep_pairs=None,
+    sub=sub,
+    sfr_field="SubhaloSFRinRad",
+)
+
+X, Xmeta = make_feature_matrix(cat, ["r_kpc", "v_r"], standardize=False)
+theta = make_theta_vector(cat, "mdm_sum", log10=True)
+
+x_obs = np.array([..., ...], dtype=float)
+sigma = np.array([..., ...], dtype=float)
+
+d = abc_distance_diagonal(X, x_obs, sigma)
+
+acc = abc_rejection_mask(d, accept_frac=0.05)
+theta_acc = theta[acc]
+
+w = abc_kernel_weights(d)
+summary = summarize_posterior(theta, w)
+
+print("Accepted:", theta_acc.size, "of", theta.size)
+print("Kernel ABC summary:", summary)
+```
 
 

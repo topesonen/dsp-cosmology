@@ -158,6 +158,9 @@ def select_central_plus_largest_satellite_by_stellar_mass(
     sub: Dict[str, Any],
     basePath: str,
     snap: int,
+    #h: float,
+    #mstar_min: float,
+    #mstar_max: float
     selection_config: SelectionConfig
 ) -> Sample:
     """Select central + largest satellite (by stellar mass) per FoF group.
@@ -276,7 +279,8 @@ def find_pairs_periodic(
         empty_i = np.array([], dtype=np.int64)
         empty_f = np.array([], dtype=np.float64)
         empty_b = np.array([], dtype=bool)
-        return PairSet(i=empty_i, j=empty_i, dist_kpc=empty_f, v_r=empty_f, v_t=empty_f, same_host=empty_b)
+        return PairSet(i=empty_i, j=empty_i, dist_kpc=empty_f, v_r=empty_f, v_t=empty_f, same_host=empty_b,
+                       force_ratio=empty_f, is_tidally_dominant=empty_b)
 
     i = pairs[:, 0]
     j = pairs[:, 1]
@@ -304,11 +308,11 @@ def find_pairs_periodic(
 
     same_host = (grnr[i] == grnr[j])
 
-    foce_ratio = compute_force_ratios(sub, i, j, dist_kpc, pos, keep_idx_global, h, box_ckpch)
+    force_ratio = compute_force_ratios(sub, i, j, dist_kpc, pos, keep_idx_global, h, box_ckpch)
     is_tidally_dominant = determine_tidal_dominance(sub, i, j, pos, keep_idx_global, h, box_ckpch)
 
     return PairSet(i=i, j=j, dist_kpc=dist_kpc, v_r=v_r, v_t=v_t,
-                   same_host=same_host, force_ratio=foce_ratio, is_tidally_dominant=is_tidally_dominant)
+                   same_host=same_host, force_ratio=force_ratio, is_tidally_dominant=is_tidally_dominant)
 
 
 def filter_by_vel(
@@ -534,7 +538,7 @@ def _get_local_neighbors(sample_pos, sub, h, box_ckpch, search_radius_kpc=2000.0
     """
 
     # Initialize masses and positions
-    m_all = sub["SubhaloMass"].astype(np.float64) * 1e10 / h
+    m_all = (sub["SubhaloMass"].astype(np.float64)) * 1e10 / h
     pos_all = (sub["SubhaloPos"].astype(np.float64)) % box_ckpch
     
     # Filter to include only valid subhalos

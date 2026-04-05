@@ -176,7 +176,7 @@ def select_central_plus_largest_satellite_by_stellar_mass(
         sub: dict returned by il.groupcat.loadSubhalos(...).
         basePath: simulation outputs path (contains group catalog).
         snap: snapshot number.
-        selection_config: object containing the selection criteria 
+        selection_config: object containing the selection criteria
             and the simulation constants
 
     Returns:
@@ -279,8 +279,16 @@ def find_pairs_periodic(
         empty_i = np.array([], dtype=np.int64)
         empty_f = np.array([], dtype=np.float64)
         empty_b = np.array([], dtype=bool)
-        return PairSet(i=empty_i, j=empty_i, dist_kpc=empty_f, v_r=empty_f, v_t=empty_f, same_host=empty_b,
-                       force_ratio=empty_f, is_tidally_dominant=empty_b)
+        return PairSet(
+            i=empty_i,
+            j=empty_i,
+            dist_kpc=empty_f,
+            v_r=empty_f,
+            v_t=empty_f,
+            same_host=empty_b,
+            force_ratio=empty_f,
+            is_tidally_dominant=empty_b,
+        )
 
     i = pairs[:, 0]
     j = pairs[:, 1]

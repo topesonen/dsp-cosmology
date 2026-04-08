@@ -1,0 +1,129 @@
+{
+  "selection_config": {
+    "m_stellar_min": 2e10,
+    "m_stellar_max": 5e11,
+    "r_min": 500.0,
+    "r_max": 1000.0,
+    "blue_threshold_gr": 0.65
+  },
+  "filter_config": {
+    "v_tot_min": 0,
+    "v_tot_max": 600,
+    "vt_min": 0,
+    "vt_max": 300,
+    "vr_min": -400,
+    "vr_max": 0,
+    "density_radius": 2000,
+    "intruder_factor": 0.5,
+    "third_massive_factor": 1.5
+  },
+  "feature_info": {
+    "r_kpc": {
+      "obs": 770.0,
+      "sigma": 15.0,
+      "active": true,
+      "label": "Pair separation $r$ [kpc]",
+      "description": "Current MW-M31 separation proxy."
+    },
+    "v_r": {
+      "obs": -109.0,
+      "sigma": 20.0,
+      "active": true,
+      "label": "Radial velocity $v_r$ [km/s]",
+      "description": "Relative radial velocity of the pair."
+    },
+    "v_t": {
+      "obs": 17.0,
+      "sigma": 30.0,
+      "active": true,
+      "label": "Tangential velocity $v_t$ [km/s]",
+      "description": "Relative tangential velocity of the pair."
+    },
+    "same_host": {
+      "obs": 0.0,
+      "sigma": 0.5,
+      "active": false,
+      "label": "Same-host flag",
+      "description": "Whether both objects belong to the same host halo."
+    },
+    "mstar_big": {
+      "obs": 5e10,
+      "sigma": 1e10,
+      "active": false,
+      "label": "Larger stellar mass",
+      "description": "Stellar mass of the more massive member."
+    },
+    "mstar_small": {
+      "obs": 4e10,
+      "sigma": 1e10,
+      "active": false,
+      "label": "Smaller stellar mass",
+      "description": "Stellar mass of the less massive member."
+    }
+  },
+  "target_presets": {
+    "larger_halo_m200c_log10": {
+      "column": "m200c_big",
+      "log10": true,
+      "active": true,
+      "label": "Larger-halo M200c",
+      "description": "Default M200c target. Uses the larger parent FoF-halo M200c in the pair."
+    },
+    "smaller_halo_m200c_log10": {
+      "column": "m200c_small",
+      "log10": true,
+      "active": false,
+      "label": "Smaller-halo M200c",
+      "description": "Uses the smaller parent FoF-halo M200c in the pair."
+    },
+    "total_m200c_log10": {
+      "column": "m200c_sum",
+      "log10": true,
+      "active": false,
+      "label": "Sum of pair-member M200c values",
+      "description": "Use with care for same-host pairs, where both members share the same parent FoF halo."
+    },
+    "m200c_ratio_log10": {
+      "column": "m200c_ratio",
+      "log10": true,
+      "active": false,
+      "label": "M200c ratio",
+      "description": "max(m200c_i, m200c_j) / min(m200c_i, m200c_j)"
+    },
+    "total_dm_mass_log10": {
+      "column": "mdm_sum",
+      "log10": true,
+      "active": false,
+      "label": "Total dark-matter mass",
+      "description": "Original subhalo-based target."
+    },
+    "larger_halo_dm_mass_log10": {
+      "column": "mdm_big",
+      "log10": true,
+      "active": false,
+      "label": "Larger halo dark-matter mass",
+      "description": "Dark-matter mass of the more massive member."
+    },
+    "smaller_halo_dm_mass_log10": {
+      "column": "mdm_small",
+      "log10": true,
+      "active": false,
+      "label": "Smaller halo dark-matter mass",
+      "description": "Dark-matter mass of the less massive member."
+    },
+    "dm_mass_ratio_log10": {
+      "column": "dm_mass_ratio",
+      "log10": true,
+      "active": false,
+      "label": "Dark-matter mass ratio",
+      "description": "max(mdm_i, mdm_j) / min(mdm_i, mdm_j)"
+    },
+    "total_stellar_mass_log10": {
+      "column": "mstar_sum",
+      "log10": true,
+      "active": false,
+      "label": "Total stellar mass",
+      "description": "Useful comparison target."
+    }
+  }
+}

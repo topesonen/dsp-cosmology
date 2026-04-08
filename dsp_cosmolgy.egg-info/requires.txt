@@ -1,0 +1,10 @@
+illustris_python @ git+https://github.com/illustristng/illustris_python.git
+matplotlib>=3.10.0
+seaborn>=0.13.0
+scipy>=1.15.0
+pandas>=3.0.0
+numpy>=2.2.0
+scikit-learn>=1.6.0
+h5py>=3.11.0
+tabulate>=0.10
+optuna

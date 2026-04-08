@@ -32,6 +32,7 @@ class FilterConfig:
     """Configuration parameters for subhalo filtering.
 
     Args:
+        v_tot_min (float): Minimum total 3D velocity magnitude in [km/s].
         v_tot_max (float): Maximum total 3D velocity magnitude in [km/s].
         vt_min (float): Minimum tangential velocity in [km/s].
         vt_max (float): Maximum tangential velocity in [km/s].
@@ -43,12 +44,14 @@ class FilterConfig:
             radius for nearby 'intruder' subhalos.
         third_massive_factor (float): Mass ratio threshold for the third 
             most massive subhalo in a group.
-        fr_min (float): Minimum force ratio threshold.
-        fr_max (float): Maximum force ratio threshold.
+        force_ratio_min (float): Minimum force ratio threshold.
+        force_ratio_max (float): Maximum force ratio threshold.
+        tidally_dominant (bool): If True, only keep pairs that are tidally 
+            dominant according to the force ratio criterion.
     """
 
-    v_tot_max: float | None = 500
     v_tot_min: float | None = 0
+    v_tot_max: float | None = 500
     vt_min: float | None = 0                
     vt_max: float | None = 300               
     vr_min: float | None = 400   

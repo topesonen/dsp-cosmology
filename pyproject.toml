@@ -9,20 +9,17 @@ readme = "README.md"
 version = "0.1.0"
 requires-python = ">= 2.2.0" #3.12
 dependencies = [
-#    "illustris_python @ git+https://github.com/illustristng/illustris_python.git",
-    "matplotlib >= 3.7", #3.10.0",
-    "seaborn >= 0.12", #0.13.0",
-    "scipy >= 1.10", #1.15.0",
-    "pandas >= 2.2", #3.0.0",
-    "numpy >= 1.24", #2.2.0",
-    "scikit-learn >= 1.3", #1.6.0",
-    "h5py >= 3.8", #3.11.0",
-    "tabulate >= 0.9", #0.10",
+    "illustris_python @ git+https://github.com/illustristng/illustris_python.git",
+    "matplotlib >= 3.7",
+    "seaborn >= 0.12",
+    "scipy >= 1.10",
+    "pandas >= 2.2",
+    "numpy >= 1.24",
+    "scikit-learn >= 1.3",
+    "h5py >= 3.8",
+    "tabulate >= 0.9",
     "optuna"
 ]
-
-#[tool.setuptools]
-#packages = []
 
 [tool.setuptools.packages.find]
 where = ["."]

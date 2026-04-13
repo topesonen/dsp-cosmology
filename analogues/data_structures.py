@@ -107,6 +107,7 @@ class Sample:
             Shape (N,).
         r_band (np.ndarray): Absolute magnitude in the r-band (AB system). 
             Shape (N,).
+        
     """
 
     keep_idx: np.ndarray
@@ -129,6 +130,11 @@ class Sample:
     g_band: np.ndarray
     r_band: np.ndarray
     k_band: np.ndarray
+    circ: np.ndarray
+    ang_mom: np.ndarray
+    eigen1: np.ndarray
+    eigen2: np.ndarray
+    eigen3: np.ndarray
 
 
 from dataclasses import dataclass

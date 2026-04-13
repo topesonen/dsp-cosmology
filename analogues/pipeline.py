@@ -10,11 +10,12 @@ Assumptions:
 """
 
 from __future__ import annotations
-from typing import Dict, Any
+from typing import Dict, List, Any
 import numpy as np
 from scipy.spatial import cKDTree
 from tabulate import tabulate
 import illustris_python as il
+import h5py
 from .data_structures import PairSet, Sample, SelectionConfig
 
 
@@ -120,13 +121,67 @@ def load_header(basePath: str, snap: int, verbose: bool = True) -> Dict[str, flo
         "box_side_length": box_side_length,
     }
 
+def load_catalog_with_sample_ids(
+    path: str, 
+    snapshot: str, 
+    sample_ids: np.ndarray, 
+    fields: List[str]
+) -> Dict[str, np.ndarray]:
+    """Extract catalog fields for a subset of sample IDs.
+    
+    Reads multiple datasets from an HDF5 catalog file and matches them to sample IDs
+    using a dictionary lookup. Fields are only returned for IDs present in the catalog;
+    missing IDs are filled with np.nan.
+    
+    Args:
+        path: Absolute path to the HDF5 catalog file (e.g., 'stellar_circs.hdf5').
+        snapshot: Group name within the HDF5 file (e.g., 'Snapshot_99').
+        sample_ids: Array of subhalo IDs to extract values for (length M_sample).
+        fields: List of dataset names to load from the catalog snapshot.
+    
+    Returns:
+        Dictionary mapping field names to numpy arrays of length len(sample_ids).
+        Each array is aligned to sample_ids order; missing values are np.nan.
+    
+    Example:
+        >>> result = get_catalog_fields_with_sample_ids(
+        ...     path='../tng300/catalog_c/stellar_circs.hdf5',
+        ...     snapshot='Snapshot_99',
+        ...     sample_ids=sample.keep_idx,
+        ...     fields=['CircAbove07Frac', 'SpecificAngMom']
+        ... )
+        >>> circ_values = result['CircAbove07Frac']  # length == len(sample.keep_idx)
+    """
+    catalog_dict: Dict[str, np.ndarray] = {}
+    
+    with h5py.File(path, "r") as f:
+        snap = f[snapshot]
+        
+        # Load the catalog's subhalo ID array (index into catalog)
+        catalog_ids = snap["SubfindID"][...].astype(int)   # length N_catalog
+        
+        for field in fields:
+            # Load the field values from catalog (same length as catalog_ids)
+            catalog_vals = snap[field][...]  # length N_catalog
+            
+            # Build ID → value mapping for fast lookup
+            id_to_val = dict(zip(catalog_ids, catalog_vals))
+            
+            # Extract values for sample_ids; use np.nan for missing IDs
+            catalog_dict[field] = np.array(
+                [id_to_val.get(sid, np.nan) for sid in sample_ids],
+                dtype=catalog_vals.dtype
+            )
+    
+    return catalog_dict
 
 def generate_sample(
     sub: Dict[str, Any],
     basePath: str,
     snap: int,
     selection_config: SelectionConfig,
-    verbose: bool = True
+    catalog_c_path: str,
+    verbose: bool = True,
 ) -> Sample:
     """Select central + largest satellite (by stellar mass) per FoF group.
 
@@ -220,6 +275,24 @@ def generate_sample(
             keep_idx=keep_idx
         )
 
+    catalog_c = load_catalog_with_sample_ids(
+        path=catalog_c_path, 
+        snapshot='Snapshot_' + str(snap),
+        sample_ids=keep_idx,
+        fields = [
+                "CircAbove07Frac",
+                "CircAbove07Frac_allstars",
+                "CircAbove07MinusBelowNeg07Frac",
+                "CircAbove07MinusBelowNeg07Frac_allstars",
+                "CircTwiceBelow0Frac",
+                "CircTwiceBelow0Frac_allstars",
+                "MassTensorEigenVals",
+                "ReducedMassTensorEigenVals",
+                "SpecificAngMom",
+                "SpecificAngMom_allstars",
+            ]
+        )
+
     return Sample(
         keep_idx=keep_idx,
         grnr=selected_grnr,
@@ -240,7 +313,12 @@ def generate_sample(
         u_band=u_band,
         g_band=g_band,
         r_band=r_band,
-        k_band=k_band
+        k_band=k_band,
+        circ=catalog_c['CircAbove07Frac_allstars'],
+        ang_mom=catalog_c['SpecificAngMom_allstars'],
+        eigen1=catalog_c['MassTensorEigenVals'][:,0],
+        eigen2=catalog_c['MassTensorEigenVals'][:,1],
+        eigen3=catalog_c['MassTensorEigenVals'][:,2],
     )
 
 

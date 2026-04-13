@@ -22,6 +22,7 @@ class AnalogueSample:
             base_path: str,
             selection_config: SelectionConfig,
             filter_config: FilterConfig,
+            catalog_c_path: str,
             snap: int = 99,
             verbose: bool = True
         ):
@@ -53,6 +54,7 @@ class AnalogueSample:
             basePath=base_path,
             snap=snap,
             selection_config=self._selection_config,
+            catalog_c_path=catalog_c_path,
             verbose=verbose
         )
 

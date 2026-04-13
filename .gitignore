@@ -7,7 +7,8 @@ outputs/
 .DS_Store
 notes.md
 .vscode/
-tng300/outputs/
-tng300/catalog_c/
+tng300/outputs/*
+tng300/catalog_c/*
+!tng300/catalog_c/.gitkeep
 sbi-logs/
 build/

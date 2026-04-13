@@ -107,7 +107,15 @@ class Sample:
             Shape (N,).
         r_band (np.ndarray): Absolute magnitude in the r-band (AB system). 
             Shape (N,).
-        
+        circ (np.ndarray): The fractional mass of stars with ϵ>0.7. 
+            This is a common definition of the "disk" stars - 
+            those with significant (positive) rotational support. Shape (N,).
+        ang_mom (np.ndarray): The specific angular momentum of the stars. Shape (N,).
+        eigen (np.ndarray): Three numbers for each galaxy that correspond to 
+            the eigenvalues of the mass tensor of the stellar mass inside the 
+            stellar 2R_(1/2). Order of magnitude of is descending with 
+            index 0 being the largest, index 1 being middle one and
+            index 2 being the smallest. Shape (N, 3).
     """
 
     keep_idx: np.ndarray
@@ -132,9 +140,7 @@ class Sample:
     k_band: np.ndarray
     circ: np.ndarray
     ang_mom: np.ndarray
-    eigen1: np.ndarray
-    eigen2: np.ndarray
-    eigen3: np.ndarray
+    eigen: np.ndarray
 
 
 from dataclasses import dataclass

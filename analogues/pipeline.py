@@ -198,6 +198,7 @@ def generate_sample(
         snap: snapshot number.
         selection_config: object containing the selection criteria 
             and the simulation constants
+        catalog_c_path: catalog_c path to stellar_circs.hdf5 file
         verbose: If True, print diagnostics
 
     Returns:
@@ -316,9 +317,7 @@ def generate_sample(
         k_band=k_band,
         circ=catalog_c['CircAbove07Frac_allstars'],
         ang_mom=catalog_c['SpecificAngMom_allstars'],
-        eigen1=catalog_c['MassTensorEigenVals'][:,0],
-        eigen2=catalog_c['MassTensorEigenVals'][:,1],
-        eigen3=catalog_c['MassTensorEigenVals'][:,2],
+        eigen=catalog_c['MassTensorEigenVals'],
     )
 
 

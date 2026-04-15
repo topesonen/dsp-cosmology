@@ -16,6 +16,8 @@ class SelectionConfig:
             separate blue and red populations.
         hubble_param (float): The dimensionless Hubble parameter.
         box_side_length (float): The simulation box side length in [ckpc/h].
+        disc_threshold (float): The ϵ value cutoff point used to determine 
+            galaxy as disc shaped.
     """
 
     m_stellar_min: float    
@@ -25,6 +27,7 @@ class SelectionConfig:
     blue_threshold_gr: float 
     hubble_param: float | None = None
     box_side_length: float | None = None
+    disc_threshold: float | None = None
 
 
 @dataclass(frozen=True)
@@ -110,12 +113,14 @@ class Sample:
         circ (np.ndarray): The fractional mass of stars with ϵ>0.7. 
             This is a common definition of the "disk" stars - 
             those with significant (positive) rotational support. Shape (N,).
-        ang_mom (np.ndarray): The specific angular momentum of the stars. Shape (N,).
+        ang_mom (np.ndarray): The specific angular momentum of the stars [km/s * kpc]. Shape (N,).
         eigen (np.ndarray): Three numbers for each galaxy that correspond to 
             the eigenvalues of the mass tensor of the stellar mass inside the 
             stellar 2R_(1/2). Order of magnitude of is descending with 
             index 0 being the largest, index 1 being middle one and
-            index 2 being the smallest. Shape (N, 3).
+            index 2 being the smallest. [kpc] Shape (N, 3).
+        is_disc (np.ndarray): Boolean-like array (1/0) for disc galaxy
+            classification. Shape (N,).
     """
 
     keep_idx: np.ndarray
@@ -141,6 +146,7 @@ class Sample:
     circ: np.ndarray
     ang_mom: np.ndarray
     eigen: np.ndarray
+    is_disc: np.ndarray
 
 
 from dataclasses import dataclass

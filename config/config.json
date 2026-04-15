@@ -4,7 +4,8 @@
     "m_stellar_max": 5e11,
     "r_min": 500.0,
     "r_max": 1000.0,
-    "blue_threshold_gr": 0.65
+    "blue_threshold_gr": 0.65,
+    "disc_threshold": 0.1
   },
   "filter_config": {
     "v_tot_min": 0,

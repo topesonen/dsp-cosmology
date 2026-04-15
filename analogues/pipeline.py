@@ -293,6 +293,8 @@ def generate_sample(
                 "SpecificAngMom_allstars",
             ]
         )
+    
+    is_disc = catalog_c['CircAbove07Frac_allstars'] > selection_config.disc_threshold
 
     return Sample(
         keep_idx=keep_idx,
@@ -318,6 +320,7 @@ def generate_sample(
         circ=catalog_c['CircAbove07Frac_allstars'],
         ang_mom=catalog_c['SpecificAngMom_allstars'],
         eigen=catalog_c['MassTensorEigenVals'],
+        is_disc=is_disc
     )
 
 

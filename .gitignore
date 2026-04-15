@@ -10,3 +10,8 @@ notes.md
 tng300/outputs/
 sbi-logs/
 results/
+tng300/outputs/*
+tng300/catalog_c/*
+!tng300/catalog_c/.gitkeep
+sbi-logs/
+build/

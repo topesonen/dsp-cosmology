@@ -1,7 +1,7 @@
 {
   "selection_config": {
-    "m_stellar_min": 2e10,
-    "m_stellar_max": 5e11,
+    "m_stellar_min": 20000000000.0,
+    "m_stellar_max": 500000000000.0,
     "r_min": 500.0,
     "r_max": 1000.0,
     "blue_threshold_gr": 0.65
@@ -47,15 +47,15 @@
       "description": "Whether both objects belong to the same host halo."
     },
     "mstar_big": {
-      "obs": 5e10,
-      "sigma": 1e10,
+      "obs": 50000000000.0,
+      "sigma": 10000000000.0,
       "active": false,
       "label": "Larger stellar mass",
       "description": "Stellar mass of the more massive member."
     },
     "mstar_small": {
-      "obs": 4e10,
-      "sigma": 1e10,
+      "obs": 40000000000.0,
+      "sigma": 10000000000.0,
       "active": false,
       "label": "Smaller stellar mass",
       "description": "Stellar mass of the less massive member."
@@ -73,6 +73,13 @@
       "active": true,
       "label": "",
       "description": ""
+    },
+    "pair_is_red_red": {
+      "obs": 1.0,
+      "sigma": 0.5,
+      "active": true,
+      "label": "Pair color (red-red=1)",
+      "description": "Binary pair color feature after removing mixed pairs."
     }
   },
   "target_presets": {

@@ -1,7 +1,7 @@
 {
   "selection_config": {
-    "m_stellar_min": 2e10,
-    "m_stellar_max": 5e11,
+    "m_stellar_min": 20000000000.0,
+    "m_stellar_max": 500000000000.0,
     "r_min": 500.0,
     "r_max": 1000.0,
     "blue_threshold_gr": 0.65,
@@ -20,53 +20,74 @@
   },
   "feature_info": {
     "r_kpc": {
-      "obs": 770.0,
-      "sigma": 15.0,
+      "obs": 765.0,
+      "sigma": 11.0,
       "active": true,
       "label": "Pair separation $r$ [kpc]",
       "description": "Current MW-M31 separation proxy."
     },
     "v_r": {
-      "obs": -109.0,
-      "sigma": 20.0,
+      "obs": -109.3,
+      "sigma": 4.4,
       "active": true,
       "label": "Radial velocity $v_r$ [km/s]",
       "description": "Relative radial velocity of the pair."
     },
     "v_t": {
-      "obs": 17.0,
-      "sigma": 30.0,
+      "obs": 57.0,
+      "sigma": 35.0,
       "active": true,
       "label": "Tangential velocity $v_t$ [km/s]",
       "description": "Relative tangential velocity of the pair."
     },
     "same_host": {
       "obs": 0.0,
-      "sigma": 0.5,
+      "sigma": 0.0,
       "active": false,
       "label": "Same-host flag",
       "description": "Whether both objects belong to the same host halo."
     },
     "mstar_big": {
-      "obs": 5e10,
-      "sigma": 1e10,
+      "obs": 50000000000.0,
+      "sigma": 10000000000.0,
       "active": false,
       "label": "Larger stellar mass",
       "description": "Stellar mass of the more massive member."
     },
     "mstar_small": {
-      "obs": 4e10,
-      "sigma": 1e10,
+      "obs": 40000000000.0,
+      "sigma": 10000000000.0,
       "active": false,
       "label": "Smaller stellar mass",
       "description": "Stellar mass of the less massive member."
+    },
+    "k_band_small": {
+      "obs": -23.3,
+      "sigma": 0.1,
+      "active": true,
+      "label": "",
+      "description": ""
+    },
+    "k_band_large": {
+      "obs": -24.0,
+      "sigma": 0.1,
+      "active": true,
+      "label": "",
+      "description": ""
+    },
+    "pair_is_red_red": {
+      "obs": 1.0,
+      "sigma": 0.5,
+      "active": true,
+      "label": "Pair color (red-red=1)",
+      "description": "Binary pair color feature after removing mixed pairs."
     }
   },
   "target_presets": {
     "larger_halo_m200c_log10": {
       "column": "m200c_big",
       "log10": true,
-      "active": true,
+      "active": false,
       "label": "Larger-halo M200c",
       "description": "Default M200c target. Uses the larger parent FoF-halo M200c in the pair."
     },
@@ -125,6 +146,13 @@
       "active": false,
       "label": "Total stellar mass",
       "description": "Useful comparison target."
+    },
+    "total_virial_mass": {
+      "column": "log_tot_virial_mass",
+      "log10": false,
+      "active": true,
+      "label": "Total virial mass",
+      "description": "Total virial mass of the pair,"
     }
   }
 }

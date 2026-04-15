@@ -38,12 +38,12 @@ def _import_optuna():
 def _trial_search_params(trial) -> dict[str, Any]:
     return {
         "density_model": trial.suggest_categorical("density_model", ["maf", "nsf"]),
-        "hidden_features": trial.suggest_categorical("hidden_features", [32, 64, 128]),
-        "num_transforms": trial.suggest_int("num_transforms", 3, 8),
-        "training_batch_size": trial.suggest_categorical("training_batch_size", [64, 128, 256]),
-        "learning_rate": trial.suggest_float("learning_rate", 1e-4, 5e-3, log=True),
-        "validation_fraction": trial.suggest_float("validation_fraction", 0.05, 0.2),
-        "stop_after_epochs": trial.suggest_categorical("stop_after_epochs", [20, 30, 50]),
+        "hidden_features": trial.suggest_categorical("hidden_features", [32, 64, 128, 256]),
+        "num_transforms": trial.suggest_int("num_transforms", 3, 10),
+        "training_batch_size": trial.suggest_categorical("training_batch_size", [64, 128, 256, 512]),
+        "learning_rate": trial.suggest_float("learning_rate", 5e-5, 1e-2, log=True),
+        "validation_fraction": trial.suggest_float("validation_fraction", 0.05, 0.3),
+        "stop_after_epochs": trial.suggest_categorical("stop_after_epochs", [20, 30, 50, 80]),
     }
 
 
@@ -122,7 +122,7 @@ def run_sbi_optuna_study(
     target_name: str = "theta",
     fixed_config: dict[str, Any] | None = None,
     study_name: str | None = None,
-    n_trials: int = 25,
+    n_trials: int = 60,
     sampler_seed: int = 0,
     device: str | None = None,
     refit_overrides: dict[str, Any] | None = None,

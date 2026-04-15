@@ -395,7 +395,7 @@ def fit_catalog_npe(
     training_batch_size: int = 128,
     learning_rate: float = 5e-4,
     validation_fraction: float = 0.1,
-    calibration_fraction: float = 0.15,
+    calibration_fraction: float = 0.2,
     stop_after_epochs: int = 30,
     max_num_epochs: int = 300,
     clip_max_norm: float | None = 5.0,

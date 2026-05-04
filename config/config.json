@@ -50,35 +50,35 @@
     "mstar_big": {
       "obs": 50000000000.0,
       "sigma": 10000000000.0,
-      "active": false,
+      "active": true,
       "label": "Larger stellar mass",
       "description": "Stellar mass of the more massive member."
     },
     "mstar_small": {
       "obs": 40000000000.0,
       "sigma": 10000000000.0,
-      "active": false,
+      "active": true,
       "label": "Smaller stellar mass",
       "description": "Stellar mass of the less massive member."
     },
     "k_band_small": {
       "obs": -23.3,
       "sigma": 0.1,
-      "active": true,
+      "active": false,
       "label": "",
       "description": ""
     },
     "k_band_large": {
       "obs": -24.0,
       "sigma": 0.1,
-      "active": true,
+      "active": false,
       "label": "",
       "description": ""
     },
     "pair_is_red_red": {
       "obs": 1.0,
       "sigma": 0.5,
-      "active": true,
+      "active": false,
       "label": "Pair color (red-red=1)",
       "description": "Binary pair color feature after removing mixed pairs."
     }
@@ -151,7 +151,7 @@
       "column": "log_tot_virial_mass",
       "log10": false,
       "active": true,
-      "label": "Total virial mass",
+      "label": "Log Total virial mass",
       "description": "Total virial mass of the pair,"
     }
   }

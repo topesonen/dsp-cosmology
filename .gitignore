@@ -15,3 +15,4 @@ tng300/catalog_c/*
 !tng300/catalog_c/.gitkeep
 sbi-logs/
 build/
+diagnostics_explained.md

@@ -1,128 +1,109 @@
 # dsp-cosmology
-Priors for the unknown properties of the Local Group from large cosmological simulations
 
-The Local Group is the group of galaxies that contains the Milky Way, M31, and around 100 smaller galaxies. Some of its properties are known to great precision, but others, including the masses of the galaxies and the amount of intergalactic matter, the group's total energy and angular momentum, and its formation history, are difficult to measure directly. One way to infer or constrain these is to consider Local Group analogues from large cosmological simulations. In the project, the students will be provided access to data from a very large cosmological simulation (Illustris-TNG-300, https://www.tng-project.org/data/downloads/TNG300-1/), identify analogues of the Local Group, and can use their choice of statistical or machine-learning methods to derive conditional probability distributions for their properties, given different sets of observational constraints.
+Priors for unknown properties of the Local Group from large cosmological simulations.
 
+This project uses the TNG300 group catalogue to build simulated Local Group analogue pairs and infer hidden quantities, such as total virial mass, from observed-like constraints such as pair separation, relative velocity, and stellar masses. The main inference workflow compares Approximate Bayesian Computation (ABC), Gaussian Mixture Models (GMM), and Simulation-Based Inference (SBI / NPE) on the same selected analogue catalogue.
 
-Data: https://www.tng-project.org/data/downloads/TNG300-1/  
-Project plan: https://docs.google.com/document/d/1yCS9a7m-b1HusJnUgVIBFaPjPp4gSWl5nublYSlUoxM/edit?usp=sharing/
-Google Drive: https://drive.google.com/drive/folders/1jNtgNt_ird0WxtvCenBuH16vZaEci7am?usp=drive_link/
+## Repository Layout
 
-# Deadlines
+- `analogues/`: reusable analogue-selection pipeline, pair finding, filters, and data containers.
+- `scripts/`: inference helpers for ABC, GMM/KDE, SBI, Optuna tuning, and multi-configuration posterior sweeps.
+- `config/config.json`: shared analysis settings for selection cuts, feature metadata, and target metadata.
+- `notebooks/generate_analogues.ipynb`: quick notebook for building and inspecting the analogue sample.
+- `notebooks/run_simulations.ipynb`: main ABC/GMM/SBI comparison notebook.
+- `notebooks/run_multi_config_posteriors.ipynb`: compact notebook for comparing posterior curves across different feature configurations.
+- `sbi_explained.md` and `diagnostics_explained.md`: short notes explaining the SBI workflow and diagnostics.
 
-- 3 Feb: on-site lecture: project plans 1, attend only yours (upload slides and project plan day before)
-- 13 Mar: Submit mid-term presentation video to moodle and update the project plan
-- 17 Mar: Submit peer feedback for mid-term presentation videos
-- 21 Apr: on-site lecture: project plans 1, attend only yours (upload slides and project plan day before)
-- 6 May (team deadline): final report  and learning diary DL (15 May absolute deadline)
+## Setup
 
-# Links
-- The simulation is (briefly) described here: https://www.tng-project.org/about/
-- Example scripts for getting started with the data are here: https://www.tng-project.org/data/docs/scripts/
-- One of Till's papers (written with an undergraduate student on a somewhat related topic): https://academic.oup.com/mnras/article/521/4/4863/7084035
-- Data specifications: Fields in FoF Halos and Subfind Subhalos: https://www.tng-project.org/data/docs/specifications/#sec2a
+The notebooks expect the TNG300 snapshot 99 group catalogue to be available locally. By default, the code looks for:
 
-# TNG300 + illustris_python (quick setup notes)  
-================================================  
-  
-Folder layout used  
-------------------  
-~/Documents/uni/dsp/  
-  .venv/                      Python venv (one for the workspace)  
-  illustris_python/           helper library (git clone)  
-  tng300/outputs/             data root used as basePath  
-    groups_099/               downloaded group catalog parts (TNG z=0)  
-  
-1) Create and use a venv (optional, depending on your preference / environment)  
------------------------  
-cd ~/Documents/uni/dsp  
-python3 -m venv .venv  
-source .venv/bin/activate  
-python -m pip install -U pip setuptools wheel  
-  
-If python3 -m venv fails (Ubuntu/Debian):  
-sudo apt update  
-sudo apt install -y python3-venv  
-  
-2) Install illustris_python into the venv  
-----------------------------------------  
-cd ~/Documents/uni/dsp  
-git clone https://github.com/illustristng/illustris_python.git  
-python -m pip install -e ./illustris_python  
-  
-Install common deps:  
-python -m pip install numpy h5py matplotlib  
-  
-3) Download TNG300 group catalog (snapshot 99, z=0)  
---------------------------------------------------  
-Create the folder as groups_099:  
-mkdir -p ~/Documents/uni/dsp/tng300/outputs/groups_099  
-cd ~/Documents/uni/dsp/tng300/outputs/groups_099  
-  
-Download using the TNG API:  
-wget -nd -nc -nv -e robots=off -l 1 -r -A hdf5 --content-disposition --header="API-Key: 7a37e88e2f9bfb70e539a126ef60e57a" "http://www.tng-project.org/api/TNG300-1/files/groupcat-99/?format=api"   
-  
-  
-You should get many files like:  
-fof_subhalo_tab_099.0.hdf5  
-fof_subhalo_tab_099.1.hdf5  
-...  
- 
-4) Load subhalos in Python (TNG: snapNum=99)  
--------------------------------------------  
-import os  
-import illustris_python as il  
-  
-basePath = os.path.expanduser("~/Documents/uni/dsp/tng300/outputs")  
-fields = ["SubhaloMass", "SubhaloSFRinRad"]  
-  
-subhalos = il.groupcat.loadSubhalos(basePath, 99, fields=fields)  
-subhalos["count"], subhalos["SubhaloMass"].shape  
-  
-=======
-
-## ABC exploration snippet (conditional on selection S)
-
-`S` here means all upstream cuts (mass window, central+largest-satellite definition, distance window, isolation, optional bound-pair cut).  
-ABC posterior statements are conditional on this selected sample.
-
-```python
-import numpy as np
-from lg_abc import (
-    build_pair_catalog, make_feature_matrix, make_theta_vector,
-    abc_distance_diagonal, abc_rejection_mask, abc_kernel_weights,
-    summarize_posterior
-)
-
-# after running selection + pair finding + pipeline filters:
-# sample = ...
-# pipeline = ...
-# sub = ...
-
-cat = build_pair_catalog(
-    sample=sample,
-    pairs=pipeline.pairs,
-    keep_pairs=None,
-    sub=sub,
-    sfr_field="SubhaloSFRinRad",
-)
-
-X, Xmeta = make_feature_matrix(cat, ["r_kpc", "v_r"], standardize=False)
-theta = make_theta_vector(cat, "mdm_sum", log10=True)
-
-x_obs = np.array([..., ...], dtype=float)
-sigma = np.array([..., ...], dtype=float)
-
-d = abc_distance_diagonal(X, x_obs, sigma)
-
-acc = abc_rejection_mask(d, accept_frac=0.05)
-theta_acc = theta[acc]
-
-w = abc_kernel_weights(d)
-summary = summarize_posterior(theta, w)
-
-print("Accepted:", theta_acc.size, "of", theta.size)
-print("Kernel ABC summary:", summary)
+```text
+tng300/outputs/groups_099/
 ```
 
+relative to the repository root. You can also set either `TNG_BASE_PATH` or `ILLUSTRIS_BASE_PATH` to point to the TNG outputs directory.
 
+Typical environment setup:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -U pip setuptools wheel
+python -m pip install -e .
+python -m pip install sbi
+```
+
+The project uses `illustris_python` for TNG catalogue access, plus common scientific Python packages such as `numpy`, `pandas`, `scipy`, `matplotlib`, `scikit-learn`, `sbi`, and `optuna`.
+
+## How `config/config.json` Works
+
+The shared config file controls most of the scientific choices used by the notebooks.
+
+`selection_config` defines the first-stage galaxy/sample cuts, for example stellar-mass limits, pair-separation limits, and the blue/red colour threshold.
+
+`filter_config` defines pair-level cuts after candidate pairs are generated, for example allowed radial/tangential/total velocity ranges and isolation settings.
+
+`feature_info` defines the observable-like conditioning variables. Each feature entry contains:
+
+- `obs`: observed Local Group value used as `x_obs`
+- `sigma`: observational uncertainty used by ABC-style distance weighting
+- `active`: whether the feature is included by config-driven notebooks
+- `label` and `description`: display metadata for tables and plots
+
+`target_presets` defines possible inferred quantities. Exactly one target must have `"active": true`; `config.loader.load_config()` raises an error otherwise. The current default target is `total_virial_mass`, which points to the pair-level `log_tot_virial_mass` column.
+
+Important detail: `run_simulations.ipynb` uses the active features from `feature_info`, while `run_multi_config_posteriors.ipynb` uses explicit feature sets inside the notebook so it can compare several configurations without toggling `active` flags.
+
+## `run_simulations.ipynb`
+
+This is the main end-to-end comparison notebook. It:
+
+1. loads `config/config.json`;
+2. resolves the local TNG outputs path;
+3. rebuilds the analogue sample using `analogues.AnalogueSample`;
+4. keeps blue-blue and red-red pairs and removes mixed blue-red pairs;
+5. builds the final pair catalogue and feature matrix;
+6. runs ABC kernel weighting, GMM conditioning, and SBI/NPE on the same `(X, theta, x_obs)` problem;
+7. produces posterior summaries, posterior plots, feature-space checks, support checks, SBI calibration diagnostics, GMM model-selection diagnostics, and held-out residual diagnostics.
+
+Use this notebook when you want the full method comparison and diagnostics for one active feature set from the config.
+
+## `run_multi_config_posteriors.ipynb`
+
+This notebook is a lighter plotting workflow for comparing posterior curves across several feature sets. It builds the analogue catalogue once, then reruns a selected inference method for configurations such as:
+
+- separation only
+- separation + radial velocity
+- separation + radial velocity + tangential velocity
+- separation + velocities + stellar masses
+
+The main settings are in the notebook's settings cell:
+
+- `PAIR_SUBSET`: `"blue_blue"`, `"red_red"`, `"blue_or_red"`, or `"all"`
+- `INFERENCE_METHOD`: `"abc"`, `"gmm"`, or `"sbi"`
+- `FEATURE_CONFIGS`: list of feature groups to compare
+
+Use this notebook when you want a compact figure showing how the inferred halo-mass posterior changes as more observational constraints are added.
+
+## Inference Methods
+
+All three inference methods use the same retained analogue-pair catalogue and aim to estimate:
+
+```text
+p(theta | x_obs, S)
+```
+
+where `S` is the analogue-selection pipeline, `x_obs` is the observed Local Group feature vector, and `theta` is the hidden quantity such as total virial mass.
+
+- ABC reweights existing analogue rows by distance to `x_obs`, scaled by observational uncertainties.
+- GMM fits a Gaussian mixture to the joint distribution of `(theta, X)` and conditions analytically on `x_obs`.
+- SBI/NPE trains a neural conditional density estimator to sample directly from the learned posterior.
+
+The methods are intentionally compared together: ABC is transparent, GMM is a smooth parametric middle ground, and SBI is the most flexible but needs stronger diagnostics.
+
+## Useful References
+
+- TNG300 data: https://www.tng-project.org/data/downloads/TNG300-1/
+- TNG data specifications: https://www.tng-project.org/data/docs/specifications/#sec2a
+- TNG example scripts: https://www.tng-project.org/data/docs/scripts/
